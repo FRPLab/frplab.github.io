@@ -1,0 +1,5 @@
+header.site-header { background-color: rgb(51,51,102); }
+header.site-title { color: white; }
+header.site-title img { padding: 5px !important; height: 3rem; }
+main.page-content { background: #fcfcfc; padding: 0; height: 100vh; }
+main .wrapper { background: white; border-right: 1px solid #eee; border-left: 1px solid #eee; height: 100%;}
